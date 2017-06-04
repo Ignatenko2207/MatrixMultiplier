@@ -1,25 +1,44 @@
 package solutions.softwaredevelopers;
 
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MultiplierImpl implements Runnable {
 
+	private long result;
+	private static int row;
+	private int[][] matrix;
 	private static Logger logger = Logger.getLogger(MultiplierImpl.class.getName());
-	private CopyOnWriteArrayList<Integer> matrixList;
 
 	@Override
 	public void run() {
-		long result = 1;
-		for (int element : matrixList) {
-			result *= element;
+		result = 1;
+		Runnable rowsMult = new Runnable() {
+			public void run() {
+				for (int n = 0; n < matrix[row].length; n++) {
+					result *= matrix[row][n];
+				}
+			}
+		};
+
+		for (int i = 0; i < matrix.length; i++) {
+			final Semaphore semaphore = new Semaphore(1);
+			try {
+				semaphore.acquire();
+				new Thread(rowsMult).start();
+				row = i;
+				semaphore.release();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
 		}
 		logger.log(Level.INFO, "Result = " + result);
 	}
 
-	public MultiplierImpl(CopyOnWriteArrayList<Integer> incomeMatrix) {
-		this.matrixList = incomeMatrix;
+	public MultiplierImpl(int[][] incomeMatrix) {
+		this.matrix = incomeMatrix;
 	}
 
 }
